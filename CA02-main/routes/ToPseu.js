@@ -3,6 +3,9 @@ const express = require("express");
 const router = express.Router();
 const { Configuration, OpenAIApi } = require("openai");
 const config = require('../config');
+const GPT = require('../models/GPT');
+const User = require('../models/User');
+
 
 
 const configuration = new Configuration({
@@ -37,8 +40,20 @@ router.post("/improveCode", isLoggedIn, async (req, res, next) => {
     n: 1,
     temperature: 0.8,
   });
-
+  const history = new GPT(
+    {
+        prompt: q,
+        answer: answer.data.choices[0].text,
+        userId: req.user._id,
+    })
+    await history.save()
   res.render("improveCode", { answer: answer.data.choices[0].text });
 });
-
+router.get('/gptApp/history',
+    isLoggedIn,
+    async (req, res, next) => {
+        let items = await GPT.find({ userId: req.user._id })
+        res.render('history', { items })
+    }
+)
 module.exports = router;
